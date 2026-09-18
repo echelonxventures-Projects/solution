@@ -108,6 +108,32 @@ jobs:
         ports:
           - 9092:9092
 
+      mongodb:
+        image: mongo:7
+        env:
+          MONGO_INITDB_DATABASE: consultancy
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.runCommand({ping:1}).ok' | grep -q 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      elasticsearch:
+        image: docker.elastic.co/elasticsearch/elasticsearch:8.12.0
+        env:
+          discovery.type: single-node
+          xpack.security.enabled: 'false'
+          ES_JAVA_OPTS: '-Xms512m -Xmx512m'
+        ports:
+          - 9200:9200
+        options: >-
+          --health-cmd "curl -f http://localhost:9200/_cluster/health || exit 1"
+          --health-interval 15s
+          --health-timeout 10s
+          --health-retries 10
+
     steps:
       - uses: actions/checkout@v4
 
@@ -131,6 +157,8 @@ jobs:
           DATABASE_URL: postgresql://test:test@localhost:5432/consultancy_test
           REDIS_URL: redis://localhost:6379
           KAFKA_BROKERS: localhost:9092
+          MONGODB_URI: mongodb://localhost:27017/consultancy
+          ELASTICSEARCH_URL: http://localhost:9200
 
       - name: Upload coverage
         uses: codecov/codecov-action@v3

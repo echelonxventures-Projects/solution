@@ -60,6 +60,7 @@ jobs:
           - image: compliance-service
           - image: integration-service
           - image: vertical-service
+          - image: whatsapp-bot
           - image: web-app
           - image: admin-dashboard
     steps:

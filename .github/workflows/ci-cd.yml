@@ -23,7 +23,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        package: [user-service, consultant-service, booking-service, content-service, notification-service, compliance-service, integration-service, vertical-service]
+        package: [user-service, consultant-service, booking-service, content-service, notification-service, compliance-service, integration-service, vertical-service, whatsapp-bot]
     steps:
       - uses: actions/checkout@v4
 
@@ -93,7 +93,11 @@ jobs:
         working-directory: packages/services/${{ matrix.package }}
         run: |
           pip install --upgrade pip
-          pip install .
+          pip install pydantic>=2.5.0 pydantic-settings>=2.1.0 pytest>=8.0 pytest-asyncio>=0.23
+
+      - name: Run tests
+        working-directory: packages/services/${{ matrix.package }}
+        run: python -m pytest tests -q
 
       - name: Syntax check
         working-directory: packages/services/${{ matrix.package }}
@@ -138,12 +142,36 @@ jobs:
       - name: Build admin app
         run: npm run build --workspace consultancy-admin
 
+  lint-mobile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies (workspace root)
+        run: npm ci
+
+      - name: Build shared package
+        run: npm run build --workspace @consultancy/shared
+
+      - name: Lint mobile app
+        run: npm run lint --workspace consultancy-mobile
+
+      - name: Test mobile app
+        run: npm run test --workspace consultancy-mobile
+
   # ============================================
   # BUILD DOCKER IMAGES
   # ============================================
 
   build-images:
-    needs: [lint-node, lint-go, lint-python, lint-web, lint-admin]
+    needs: [lint-node, lint-go, lint-python, lint-web, lint-admin, lint-mobile]
     runs-on: ubuntu-latest
     if: github.event_name == 'push' || github.event_name == 'release'
     strategy:
@@ -178,6 +206,8 @@ jobs:
             context: packages/services/integration-service
           - image: vertical-service
             context: packages/services/vertical-service
+          - image: whatsapp-bot
+            context: packages/services/whatsapp-bot
           - image: web-app
             context: packages/web
     steps:
