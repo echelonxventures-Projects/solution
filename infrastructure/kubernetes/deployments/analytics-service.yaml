@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: analytics-service
+  namespace: consultancy
+  labels:
+    app: analytics-service
+    tier: backend
+    language: python
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: analytics-service
+  template:
+    metadata:
+      labels:
+        app: analytics-service
+    spec:
+      containers:
+      - name: analytics-service
+        image: consultancy/analytics-service:latest
+        ports:
+        - containerPort: 3011
+        env:
+        - name: PORT
+          value: "3011"
+        envFrom:
+        - configMapRef:
+            name: consultancy-config
+        - secretRef:
+            name: consultancy-secrets
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "300m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3011
+          initialDelaySeconds: 30
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: analytics-service
+  namespace: consultancy
+spec:
+  selector:
+    app: analytics-service
+  ports:
+  - port: 3011
+    targetPort: 3011
+  type: ClusterIP

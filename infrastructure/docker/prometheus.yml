@@ -1,0 +1,75 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  # Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Node.js Services
+  - job_name: 'user-service'
+    static_configs:
+      - targets: ['user-service:3001']
+    metrics_path: '/metrics'
+
+  - job_name: 'consultant-service'
+    static_configs:
+      - targets: ['consultant-service:3002']
+    metrics_path: '/metrics'
+
+  - job_name: 'booking-service'
+    static_configs:
+      - targets: ['booking-service:3003']
+    metrics_path: '/metrics'
+
+  - job_name: 'notification-service'
+    static_configs:
+      - targets: ['notification-service:3010']
+    metrics_path: '/metrics'
+
+  # Go Services
+  - job_name: 'billing-service'
+    static_configs:
+      - targets: ['billing-service:3005']
+    metrics_path: '/metrics'
+
+  - job_name: 'communication-service'
+    static_configs:
+      - targets: ['communication-service:3004']
+    metrics_path: '/metrics'
+
+  - job_name: 'search-service'
+    static_configs:
+      - targets: ['search-service:3009']
+    metrics_path: '/metrics'
+
+  # Python Services
+  - job_name: 'ai-orchestrator-service'
+    static_configs:
+      - targets: ['ai-orchestrator-service:3007']
+    metrics_path: '/metrics'
+
+  - job_name: 'memory-service'
+    static_configs:
+      - targets: ['memory-service:3008']
+    metrics_path: '/metrics'
+
+  - job_name: 'analytics-service'
+    static_configs:
+      - targets: ['analytics-service:3011']
+    metrics_path: '/metrics'
+
+  # Infrastructure
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+
+  - job_name: 'kafka'
+    static_configs:
+      - targets: ['kafka-exporter:9308']

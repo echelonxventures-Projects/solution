@@ -1,0 +1,32 @@
+{
+  "name": "@consultancy/vertical-service",
+  "version": "1.0.0",
+  "description": "Vertical service for consultancy categories",
+  "main": "./dist/index.js",
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
+    "start": "node dist/index.js",
+    "test": "vitest run",
+    "lint": "eslint src/",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@fastify/cors": "^9.0.0",
+    "@fastify/helmet": "^11.0.0",
+    "@fastify/swagger": "^8.12.0",
+    "@fastify/swagger-ui": "^4.0.0",
+    "fastify": "^4.26.0",
+    "uuid": "^9.0.0",
+    "zod": "^3.22.0",
+    "@consultancy/shared": "*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/uuid": "^9.0.0",
+    "ts-node-dev": "^2.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.3.0",
+    "vitest": "^1.2.0"
+  }
+}

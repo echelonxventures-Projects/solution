@@ -1,0 +1,28 @@
+server:
+  port: 3005
+  host: "0.0.0.0"
+
+database:
+  host: "localhost"
+  port: 5432
+  name: "consultancy_billing"
+  user: "postgres"
+  password: "postgres"
+  max_connections: 20
+
+kafka:
+  brokers: ["localhost:9092"]
+  topic_prefix: "consultancy"
+
+stripe:
+  api_key: "${STRIPE_API_KEY}"
+  webhook_secret: "${STRIPE_WEBHOOK_SECRET}"
+
+paypal:
+  client_id: "${PAYPAL_CLIENT_ID}"
+  client_secret: "${PAYPAL_CLIENT_SECRET}"
+  mode: "sandbox"
+
+logging:
+  level: "info"
+  format: "json"

@@ -1,0 +1,46 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: consultancy-config
+  namespace: consultancy
+data:
+  # Environment configuration
+  NODE_ENV: "production"
+  LOG_LEVEL: "info"
+
+  # Service URLs (internal)
+  USER_SERVICE_URL: "http://user-service:3001"
+  CONSULTANT_SERVICE_URL: "http://consultant-service:3002"
+  BOOKING_SERVICE_URL: "http://booking-service:3003"
+  COMMUNICATION_SERVICE_URL: "http://communication-service:3004"
+  BILLING_SERVICE_URL: "http://billing-service:3005"
+  CONTENT_SERVICE_URL: "http://content-service:3006"
+  AI_ORCHESTRATOR_URL: "http://ai-orchestrator-service:3007"
+  MEMORY_SERVICE_URL: "http://memory-service:3008"
+  SEARCH_SERVICE_URL: "http://search-service:3009"
+  NOTIFICATION_SERVICE_URL: "http://notification-service:3010"
+  ANALYTICS_SERVICE_URL: "http://analytics-service:3011"
+  COMPLIANCE_SERVICE_URL: "http://compliance-service:3012"
+  INTEGRATION_SERVICE_URL: "http://integration-service:3013"
+  VERTICAL_SERVICE_URL: "http://vertical-service:3014"
+
+  # Kafka Configuration
+  KAFKA_BROKERS: "kafka:9092"
+  KAFKA_TOPIC_PREFIX: "consultancy"
+
+  # Redis Configuration
+  REDIS_URL: "redis://redis:6379"
+
+  # Elasticsearch Configuration
+  ELASTICSEARCH_URL: "http://elasticsearch:9200"
+
+  # Feature Flags
+  ENABLE_VIDEO_SESSIONS: "true"
+  ENABLE_WHATSAPP: "true"
+  ENABLE_AI_CHATBOT: "true"
+  ENABLE_AI_MATCHING: "true"
+
+  # Region settings
+  DEFAULT_REGION: "US"
+  DEFAULT_CURRENCY: "USD"
+  DEFAULT_LANGUAGE: "en"

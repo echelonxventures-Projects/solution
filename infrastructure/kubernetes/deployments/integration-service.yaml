@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: integration-service
+  namespace: consultancy
+  labels:
+    app: integration-service
+    tier: backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: integration-service
+  template:
+    metadata:
+      labels:
+        app: integration-service
+    spec:
+      containers:
+      - name: integration-service
+        image: consultancy/integration-service:latest
+        ports:
+        - containerPort: 3013
+        env:
+        - name: PORT
+          value: "3013"
+        envFrom:
+        - configMapRef:
+            name: consultancy-config
+        - secretRef:
+            name: consultancy-secrets
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3013
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3013
+          initialDelaySeconds: 5
+          periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: integration-service
+  namespace: consultancy
+spec:
+  selector:
+    app: integration-service
+  ports:
+  - port: 3013
+    targetPort: 3013
+  type: ClusterIP

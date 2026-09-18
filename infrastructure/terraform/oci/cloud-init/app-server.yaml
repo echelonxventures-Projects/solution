@@ -1,0 +1,202 @@
+#cloud-config
+# OCI App Server - Cloud Init Configuration
+# Installs Docker, configures environment for consultancy platform
+
+package_update: true
+package_upgrade: true
+
+packages:
+  - docker
+  - docker-compose
+  - git
+  - python3
+  - python3-pip
+  - nodejs
+  - npm
+  - jq
+  - curl
+  - wget
+  - htop
+  - vim
+
+groups:
+  - docker
+
+users:
+  - name: consultancy
+    groups: docker
+    shell: /bin/bash
+    sudo: ALL=(ALL) NOPASSWD:ALL
+
+write_files:
+  # Environment file template
+  - path: /opt/consultancy-platform/.env.example
+    owner: consultancy:consultancy
+    permissions: '0644'
+    content: |
+      # Environment Configuration for Consultancy Platform
+      NODE_ENV=production
+      DATABASE_HOST=localhost
+      DATABASE_PORT=5432
+      DATABASE_NAME=consultancy
+      DATABASE_USER=postgres
+      DATABASE_PASSWORD=postgres
+      DATABASE_POOL_MIN=2
+      DATABASE_POOL_MAX=20
+      JWT_SECRET=change-this-secret-in-production
+      JWT_EXPIRES_IN=15m
+      JWT_REFRESH_EXPIRES_IN=7d
+      KAFKA_BROKERS=localhost:9092
+      REDIS_HOST=localhost
+      REDIS_PORT=6379
+      ANTHROPIC_API_KEY=your-anthropic-key
+      OPENAI_API_KEY=your-openai-key
+      STRIPE_SECRET_KEY=your-stripe-key
+      SENDGRID_API_KEY=your-sendgrid-key
+      TWILIO_ACCOUNT_SID=your-twilio-sid
+      TWILIO_AUTH_TOKEN=your-twilio-token
+
+  # Docker compose file location marker
+  - path: /opt/consultancy-platform/README.md
+    owner: consultancy:consultancy
+    permissions: '0644'
+    content: |
+      # Consultancy Platform - Application Server
+      This server is configured to run the consultancy platform.
+
+      ## Quick Start
+      1. Clone the repository:
+         git clone https://github.com/your-org/consultancy-platform.git
+
+      2. Configure environment:
+         cp .env.example .env
+         nano .env
+
+      3. Start services:
+         docker-compose up -d
+
+      4. Check health:
+         docker-compose ps
+         curl http://localhost:3000/health
+
+  # System limits for Docker
+  - path: /etc/security/limits.d/docker.conf
+    owner: root:root
+    permissions: '0644'
+    content: |
+      * soft nofile 65536
+      * hard nofile 65536
+      * soft nproc 4096
+      * hard nproc 4096
+
+  # Docker daemon configuration
+  - path: /etc/docker/daemon.json
+    owner: root:root
+    permissions: '0644'
+    content: |
+      {
+        "log-driver": "json-file",
+        "log-opts": {
+          "max-size": "100m",
+          "max-file": "3"
+        },
+        "storage-driver": "overlay2",
+        "default-ulimits": {
+          "nofile": {
+            "Name": "nofile",
+            "Hard": 65536,
+            "Soft": 65536
+          }
+        }
+      }
+
+  # Systemd service for consultancy platform
+  - path: /etc/systemd/system/consultancy.service
+    owner: root:root
+    permissions: '0644'
+    content: |
+      [Unit]
+      Description=Consultancy Platform Services
+      After=docker.service
+      Requires=docker.service
+
+      [Service]
+      Type=simple
+      User=consultancy
+      WorkingDirectory=/opt/consultancy-platform
+      ExecStart=/usr/bin/docker-compose up
+      ExecStop=/usr/bin/docker-compose down
+      Restart=on-failure
+      RestartSec=10
+
+      [Install]
+      WantedBy=multi-user.target
+
+  # Firewall rules (firewalld for Oracle Linux)
+  - path: /etc/firewalld/zones/public.xml
+    owner: root:root
+    permissions: '0640'
+    content: |
+      <?xml version="1.0" encoding="utf-8"?>
+      <zone>
+        <short>Public</short>
+        <description>Consultancy Platform Public Zone</description>
+        <service name="ssh"/>
+        <service name="http"/>
+        <service name="https"/>
+        <port protocol="tcp" port="3000"/>
+        <port protocol="tcp" port="3001"/>
+        <port protocol="tcp" port="3002"/>
+        <port protocol="tcp" port="3003"/>
+        <port protocol="tcp" port="3004"/>
+        <port protocol="tcp" port="8080"/>
+      </zone>
+
+runcmd:
+  # Enable and start Docker
+  - systemctl enable docker
+  - systemctl start docker
+
+  # Create application directory
+  - mkdir -p /opt/consultancy-platform
+  - chown consultancy:consultancy /opt/consultancy-platform
+
+  # Mount block volume for Docker data (if attached)
+  - mkdir -p /var/lib/docker
+  # Block volume attachment happens after boot, so we'll mount in post-boot script
+
+  # Configure firewall
+  - systemctl enable firewalld
+  - systemctl start firewalld
+  - firewall-cmd --permanent --add-port=3000/tcp
+  - firewall-cmd --permanent --add-port=80/tcp
+  - firewall-cmd --permanent --add-port=443/tcp
+  - firewall-cmd --reload
+
+  # Install Node.js 20 (via nodesource)
+  - curl -fsSL https://rpm.nodesource.com/setup_20.x | bash -
+  - yum install -y nodejs
+
+  # Install Docker Compose plugin
+  - docker compose version || pip3 install docker-compose
+
+  # Setup swap file (for memory pressure)
+  - fallocate -l 2G /swapfile
+  - chmod 600 /swapfile
+  - mkswap /swapfile
+  - swapon /swapfile
+  - echo "/swapfile swap swap defaults 0 0" >> /etc/fstab
+
+  # Optimize kernel for Docker
+  - sysctl -w vm.max_map_count=262144
+  - echo "vm.max_map_count=262144" >> /etc/sysctl.conf
+
+  # Print success message
+  - echo "Consultancy Platform server initialized successfully!" > /var/log/consultancy-init.log
+
+final_message: |
+  Consultancy Platform server is ready!
+  SSH: ssh opc@$PUBLIC_IP
+  App Directory: /opt/consultancy-platform
+  Docker: docker ps
+  Domain: ${domain_name}

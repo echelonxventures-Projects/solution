@@ -1,0 +1,18 @@
+# Terraform Variables Example
+# Copy this file to terraform.tfvars and fill in your values
+
+# OCI Authentication
+tenancy_ocid        = "ocid1.tenancy.oc1..your-tenancy-id"
+user_ocid           = "ocid1.user.oc1..your-user-id"
+fingerprint         = "xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx"
+private_key_path    = "~/.oci/oci_api_key.pem"
+compartment_ocid    = "ocid1.compartment.oc1..your-compartment-id"
+
+# Region (must be your home region for Always Free)
+region              = "us-ashburn-1"  # or "us-phoenix-1", "eu-frankfurt-1", etc.
+
+# SSH Key for VM access
+ssh_public_key      = "ssh-rsa AAAAB3NzaC1yc2E... your-email@example.com"
+
+# Domain Configuration
+domain_name         = "astro.echelonxventures.org"

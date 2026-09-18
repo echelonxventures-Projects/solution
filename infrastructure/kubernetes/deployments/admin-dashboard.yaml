@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: admin-dashboard
+  namespace: consultancy
+  labels:
+    app: admin-dashboard
+    tier: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: admin-dashboard
+  template:
+    metadata:
+      labels:
+        app: admin-dashboard
+    spec:
+      containers:
+      - name: admin-dashboard
+        image: consultancy/admin-dashboard:latest
+        ports:
+        - containerPort: 1113
+        env:
+        - name: NEXT_PUBLIC_API_URL
+          value: "https://api.consultancy.com"
+        envFrom:
+        - configMapRef:
+            name: consultancy-config
+        - secretRef:
+            name: consultancy-secrets
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "50m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 1113
+          initialDelaySeconds: 30
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: admin-dashboard
+  namespace: consultancy
+spec:
+  selector:
+    app: admin-dashboard
+  ports:
+  - port: 1113
+    targetPort: 1113
+  type: ClusterIP

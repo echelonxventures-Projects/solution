@@ -1,0 +1,48 @@
+{
+  "name": "consultancy-platform",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AI-powered online consultancy marketplace platform",
+  "workspaces": [
+    "packages/shared",
+    "packages/services/*",
+    "packages/web",
+    "packages/mobile",
+    "packages/admin"
+  ],
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "clean": "turbo run clean",
+    "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\"",
+    "docker:up": "docker-compose -f docker-compose.yml up -d",
+    "docker:down": "docker-compose -f docker-compose.yml down",
+    "docker:build": "docker-compose -f docker-compose.yml build",
+    "k8s:apply": "kubectl apply -f infrastructure/kubernetes/base/",
+    "db:migrate": "ts-node scripts/migrate.ts",
+    "db:seed": "ts-node scripts/seed.ts",
+    "generate:types": "ts-node scripts/generate-types.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@typescript-eslint/eslint-plugin": "^6.19.0",
+    "@typescript-eslint/parser": "^6.19.0",
+    "eslint": "^8.56.0",
+    "prettier": "^3.2.0",
+    "ts-node": "^10.9.2",
+    "turbo": "^2.0.0",
+    "typescript": "^5.3.0"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  },
+  "packageManager": "npm@10.2.0",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "jsonwebtoken": "^9.0.3",
+    "kafkajs": "^2.2.4"
+  }
+}

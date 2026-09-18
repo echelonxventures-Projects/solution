@@ -1,0 +1,128 @@
+# Kong declarative configuration
+_format_version: "3.0"
+
+# Services
+services:
+  - name: user-service
+    url: http://user-service:3001
+    routes:
+      - name: user-routes
+        paths:
+          - /v1/users
+          - /v1/auth
+    plugins:
+      - name: rate-limiting
+        config:
+          minute: 100
+          policy: local
+
+  - name: consultant-service
+    url: http://consultant-service:3002
+    routes:
+      - name: consultant-routes
+        paths:
+          - /v1/consultants
+
+  - name: booking-service
+    url: http://booking-service:3003
+    routes:
+      - name: booking-routes
+        paths:
+          - /v1/bookings
+
+  - name: communication-service
+    url: http://communication-service:3004
+    routes:
+      - name: communication-routes
+        paths:
+          - /v1/sessions
+          - /v1/chat
+
+  - name: billing-service
+    url: http://billing-service:3005
+    routes:
+      - name: billing-routes
+        paths:
+          - /v1/payments
+          - /v1/subscriptions
+          - /v1/invoices
+
+  - name: content-service
+    url: http://content-service:3006
+    routes:
+      - name: content-routes
+        paths:
+          - /v1/content
+
+  - name: ai-orchestrator-service
+    url: http://ai-orchestrator-service:3007
+    routes:
+      - name: ai-routes
+        paths:
+          - /v1/ai
+
+  - name: memory-service
+    url: http://memory-service:3008
+    routes:
+      - name: memory-routes
+        paths:
+          - /v1/memory
+
+  - name: search-service
+    url: http://search-service:3009
+    routes:
+      - name: search-routes
+        paths:
+          - /v1/search
+
+  - name: notification-service
+    url: http://notification-service:3010
+    routes:
+      - name: notification-routes
+        paths:
+          - /v1/notifications
+
+  - name: analytics-service
+    url: http://analytics-service:3011
+    routes:
+      - name: analytics-routes
+        paths:
+          - /v1/analytics
+          - /v1/dashboard
+
+  - name: compliance-service
+    url: http://compliance-service:3012
+    routes:
+      - name: compliance-routes
+        paths:
+          - /v1/compliance
+
+  - name: integration-service
+    url: http://integration-service:3013
+    routes:
+      - name: integration-routes
+        paths:
+          - /v1/integrations
+          - /v1/webhooks
+
+  - name: vertical-service
+    url: http://vertical-service:3014
+    routes:
+      - name: vertical-routes
+        paths:
+          - /v1/verticals
+
+# Global plugins
+plugins:
+  - name: jwt
+    config:
+      secret_is_base64: false
+  - name: correlation-id
+    config:
+      header_name: X-Request-ID
+      generator: uuid
+  - name: request-transformer
+    config:
+      add:
+        headers:
+          - X-Service-Source:kong-gateway

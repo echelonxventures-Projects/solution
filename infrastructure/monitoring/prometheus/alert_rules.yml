@@ -1,0 +1,244 @@
+groups:
+  - name: application_alerts
+    rules:
+      # ============================================
+      # SERVICE HEALTH ALERTS
+      # ============================================
+
+      - alert: ServiceDown
+        expr: up == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Service {{ $labels.job }} is down"
+          description: "{{ $labels.instance }} has been down for more than 5 minutes."
+
+      - alert: ServiceHighErrorRate
+        expr: |
+          sum(rate(http_requests_total{status=~"5.."}[5m])) by (service)
+          /
+          sum(rate(http_requests_total[5m])) by (service) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High error rate on {{ $labels.service }}"
+          description: "Error rate is {{ $value | humanizePercentage }} for service {{ $labels.service }}"
+
+      - alert: ServiceSlowResponse
+        expr: |
+          histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, service)) > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Slow response time on {{ $labels.service }}"
+          description: "95th percentile response time is {{ $value }}s for {{ $labels.service }}"
+
+      # ============================================
+      # RESOURCE ALERTS
+      # ============================================
+
+      - alert: PodHighCPUUsage
+        expr: |
+          sum(rate(container_cpu_usage_seconds_total{container!=""}[5m])) by (pod_name)
+          /
+          sum(kube_pod_container_resource_limits{resource="cpu"}) by (pod_name) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage on {{ $labels.pod_name }}"
+          description: "CPU usage is {{ $value | humanizePercentage }} of limit"
+
+      - alert: PodHighMemoryUsage
+        expr: |
+          sum(container_memory_usage_bytes{container!=""}) by (pod_name)
+          /
+          sum(kube_pod_container_resource_limits{resource="memory"}) by (pod_name) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage on {{ $labels.pod_name }}"
+          description: "Memory usage is {{ $value | humanizePercentage }} of limit"
+
+      - alert: NodeHighCPUUsage
+        expr: |
+          sum(rate(node_cpu_seconds_total{mode!="idle"}[5m])) by (instance)
+          /
+          sum(rate(node_cpu_seconds_total[5m])) by (instance) > 0.8
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage on node {{ $labels.instance }}"
+          description: "Node CPU usage is {{ $value | humanizePercentage }}"
+
+      - alert: NodeHighMemoryUsage
+        expr: |
+          (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) > 0.85
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage on node {{ $labels.instance }}"
+          description: "Node memory usage is {{ $value | humanizePercentage }}"
+
+      # ============================================
+      # DATABASE ALERTS
+      # ============================================
+
+      - alert: PostgreSQLDown
+        expr: pg_up == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PostgreSQL is down"
+          description: "PostgreSQL instance is down for more than 5 minutes"
+
+      - alert: PostgreSQLHighConnections
+        expr: |
+          pg_stat_activity_count / pg_settings_max_connections > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High PostgreSQL connection count"
+          description: "Connection usage is {{ $value | humanizePercentage }}"
+
+      - alert: PostgreSQLReplicationLag
+        expr: pg_replication_lag > 30
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "PostgreSQL replication lag"
+          description: "Replication lag is {{ $value }} seconds"
+
+      - alert: RedisDown
+        expr: redis_up == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis is down"
+          description: "Redis instance is down"
+
+      - alert: RedisHighMemory
+        expr: |
+          redis_memory_used_bytes / redis_memory_max_bytes > 0.9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Redis high memory usage"
+          description: "Redis memory usage is {{ $value | humanizePercentage }}"
+
+      - alert: KafkaConsumerLag
+        expr: |
+          kafka_consumer_lag_messages > 10000
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High Kafka consumer lag"
+          description: "Consumer group {{ $labels.consumer_group }} has lag of {{ $value }} messages"
+
+      # ============================================
+      # BUSINESS METRICS ALERTS
+      # ============================================
+
+      - alert: HighBookingFailureRate
+        expr: |
+          sum(rate(booking_failed_total[5m])) by (service)
+          /
+          sum(rate(booking_requests_total[5m])) by (service) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High booking failure rate"
+          description: "Booking failure rate is {{ $value | humanizePercentage }}"
+
+      - alert: PaymentProcessingErrors
+        expr: |
+          sum(rate(payment_errors_total[5m])) > 5
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Payment processing errors"
+          description: "{{ $value }} payment errors per second"
+
+      - alert: VideoSessionFailures
+        expr: |
+          sum(rate(session_failures_total[5m])) > 3
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Video session failures"
+          description: "{{ $value }} session failures per second"
+
+      - alert: LowConsultantAvailability
+        expr: |
+          count(consultant_available == 1) < 50
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low consultant availability"
+          description: "Only {{ $value }} consultants available"
+
+      # ============================================
+      # SECURITY ALERTS
+      # ============================================
+
+      - alert: HighAuthenticationFailures
+        expr: |
+          sum(rate(auth_failures_total[5m])) > 50
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High authentication failures"
+          description: "{{ $value }} authentication failures per second"
+
+      - alert: PotentialBruteForceAttack
+        expr: |
+          sum(rate(auth_failures_total{user="unknown"}[1m])) > 10
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Potential brute force attack"
+          description: "High rate of failed authentication attempts"
+
+  - name: slo_alerts
+    rules:
+      - alert: SLAViolationAPI
+        expr: |
+          (
+            sum(rate(http_requests_total{status!~"5.."}[1h]))
+            /
+            sum(rate(http_requests_total[1h]))
+          ) < 0.99
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "SLA violation: API availability below 99%"
+          description: "API availability is {{ $value | humanizePercentage }}"
+
+      - alert: SLAViolationResponseTime
+        expr: |
+          histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[1h])) by (le)) > 1
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "SLA violation: Response time exceeds 1s"
+          description: "95th percentile response time is {{ $value }}s"

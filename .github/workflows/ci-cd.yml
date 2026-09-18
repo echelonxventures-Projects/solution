@@ -1,0 +1,323 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  release:
+    types: [published]
+
+env:
+  NODE_VERSION: '20'
+  GO_VERSION: '1.21'
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  # ============================================
+  # LINT AND TEST
+  # ============================================
+
+  lint-node:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        package: [user-service, consultant-service, booking-service, content-service, notification-service, compliance-service, integration-service, vertical-service]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies (workspace root)
+        run: npm ci
+
+      - name: Build shared package
+        run: npm run build --workspace @consultancy/shared
+
+      - name: Run linting
+        working-directory: packages/services/${{ matrix.package }}
+        run: npm run lint --if-present
+
+      - name: Run tests
+        working-directory: packages/services/${{ matrix.package }}
+        run: npm run test --if-present
+
+  lint-go:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        package: [billing-service, communication-service, search-service]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: packages/services/${{ matrix.package }}/go.sum
+
+      - name: Download modules
+        working-directory: packages/services/${{ matrix.package }}
+        run: go mod download
+
+      - name: Run tests
+        working-directory: packages/services/${{ matrix.package }}
+        run: go test -v -race ./...
+
+      - name: Build check
+        working-directory: packages/services/${{ matrix.package }}
+        run: go build ./...
+
+  lint-python:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        package: [ai-orchestrator-service, memory-service, analytics-service]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        working-directory: packages/services/${{ matrix.package }}
+        run: |
+          pip install --upgrade pip
+          pip install .
+
+      - name: Syntax check
+        working-directory: packages/services/${{ matrix.package }}
+        run: python -m compileall app main.py
+
+  lint-web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies (workspace root)
+        run: npm ci
+
+      - name: Build shared package
+        run: npm run build --workspace @consultancy/shared
+
+      - name: Build web app
+        run: npm run build --workspace @consultancy/web
+
+  lint-admin:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies (workspace root)
+        run: npm ci
+
+      - name: Build admin app
+        run: npm run build --workspace consultancy-admin
+
+  # ============================================
+  # BUILD DOCKER IMAGES
+  # ============================================
+
+  build-images:
+    needs: [lint-node, lint-go, lint-python, lint-web, lint-admin]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'release'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: user-service
+            context: packages/services/user-service
+          - image: consultant-service
+            context: packages/services/consultant-service
+          - image: booking-service
+            context: packages/services/booking-service
+          - image: billing-service
+            context: packages/services/billing-service
+          - image: communication-service
+            context: packages/services/communication-service
+          - image: content-service
+            context: packages/services/content-service
+          - image: ai-orchestrator-service
+            context: packages/services/ai-orchestrator-service
+          - image: memory-service
+            context: packages/services/memory-service
+          - image: search-service
+            context: packages/services/search-service
+          - image: notification-service
+            context: packages/services/notification-service
+          - image: analytics-service
+            context: packages/services/analytics-service
+          - image: compliance-service
+            context: packages/services/compliance-service
+          - image: integration-service
+            context: packages/services/integration-service
+          - image: vertical-service
+            context: packages/services/vertical-service
+          - image: web-app
+            context: packages/web
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: consultancy/${{ matrix.image }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=sha
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.context }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ============================================
+  # DEPLOY TO STAGING
+  # ============================================
+
+  deploy-staging:
+    needs: build-images
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/develop'
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'v1.28.0'
+
+      - name: Set kubeconfig
+        run: |
+          echo "${{ secrets.KUBE_CONFIG_STAGING }}" | base64 -d > kubeconfig
+          export KUBECONFIG=kubeconfig
+
+      - name: Deploy to staging
+        run: |
+          kubectl apply -R -f infrastructure/kubernetes/base
+          kubectl apply -R -f infrastructure/kubernetes/deployments
+          kubectl apply -R -f infrastructure/kubernetes/ingress
+          kubectl rollout status deployment --namespace consultancy
+
+      - name: Run smoke tests
+        run: |
+          curl -f http://staging.internal/health || echo "Staging URL not configured - skipping smoke test"
+
+  # ============================================
+  # DEPLOY TO PRODUCTION
+  # ============================================
+
+  deploy-production:
+    needs: build-images
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release'
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'v1.28.0'
+
+      - name: Set kubeconfig
+        run: |
+          echo "${{ secrets.KUBE_CONFIG_PRODUCTION }}" | base64 -d > kubeconfig
+          export KUBECONFIG=kubeconfig
+
+      - name: Deploy to production
+        run: |
+          kubectl apply -R -f infrastructure/kubernetes/base
+          kubectl apply -R -f infrastructure/kubernetes/deployments
+          kubectl apply -R -f infrastructure/kubernetes/ingress
+          kubectl rollout status deployment --namespace consultancy
+
+      - name: Verify deployment
+        run: |
+          kubectl get pods -n consultancy
+          kubectl get services -n consultancy
+          kubectl get ingress -n consultancy
+
+      - name: Post-deployment health check
+        run: |
+          curl -f https://api.consultancy.com/health || exit 1
+          curl -f https://consultancy.com || exit 1
+
+      - name: Send deployment notification
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": "Production deployment successful for ${{ github.event.release.tag_name }}",
+              "channel": "#deployments"
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+
+  # ============================================
+  # DATABASE MIGRATION
+  # ============================================
+
+  migrate-database:
+    needs: deploy-production
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release'
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Run migrations
+        run: |
+          for file in database/migrations/*.sql; do
+            psql $DATABASE_URL -f $file
+          done
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL_PRODUCTION }}

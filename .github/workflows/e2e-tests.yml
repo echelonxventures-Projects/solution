@@ -1,0 +1,139 @@
+name: E2E Tests
+
+on:
+  push:
+    branches: [main, develop]
+  schedule:
+    - cron: '0 6 * * *'  # Daily at 6am UTC
+
+jobs:
+  e2e-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        browser: [chrome, firefox]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies (tests/e2e)
+        working-directory: tests/e2e
+        run: npm install
+
+      - name: Install Playwright browsers
+        working-directory: tests/e2e
+        run: npx playwright install --with-deps ${{ matrix.browser }}
+
+      - name: Run E2E tests
+        working-directory: tests/e2e
+        run: npx playwright test --project=${{ matrix.browser }}
+        env:
+          BASE_URL: ${{ vars.E2E_BASE_URL || 'http://localhost:3000' }}
+          API_URL: ${{ vars.E2E_API_URL || 'http://localhost:8000' }}
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: playwright-report-${{ matrix.browser }}
+          path: tests/e2e/playwright-report/
+          retention-days: 30
+
+  api-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies (tests/api)
+        working-directory: tests/api
+        run: npm install
+
+      - name: Run API tests
+        working-directory: tests/api
+        run: npm run test
+        env:
+          API_URL: ${{ vars.API_URL || 'http://localhost:8000' }}
+          TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
+          TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+        with:
+          files: tests/api/coverage/lcov.info
+          flags: api-tests
+
+  integration-tests:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: consultancy_test
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      kafka:
+        image: bitnami/kafka:latest
+        env:
+          KAFKA_CFG_NODE_ID: 0
+          KAFKA_CFG_PROCESS_ROLES: controller,broker
+          KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 0@kafka:9093
+          KAFKA_CFG_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+        ports:
+          - 9092:9092
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install root dependencies
+        run: npm install
+
+      - name: Run database migrations
+        run: |
+          for file in database/migrations/*.sql; do
+            PGPASSWORD=test psql -h localhost -U test -d consultancy_test -f $file
+          done
+
+      - name: Run integration tests
+        run: npx jest --config tests/integration/jest.config.js --rootDir tests/integration
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/consultancy_test
+          REDIS_URL: redis://localhost:6379
+          KAFKA_BROKERS: localhost:9092
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+        with:
+          files: coverage/lcov.info
+          flags: integration-tests

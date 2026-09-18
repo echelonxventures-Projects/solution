@@ -1,0 +1,13 @@
+models:
+  - title: Local Chat
+    provider: ollama
+    model: llama3:8b
+
+  - title: Local Code
+    provider: ollama
+    model: deepseek-coder:6.7b
+
+tabAutocompleteModel:
+  title: Local Code
+  provider: ollama
+  model: deepseek-coder:6.7b

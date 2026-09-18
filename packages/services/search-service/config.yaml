@@ -1,0 +1,36 @@
+server:
+  port: 3009
+  host: "0.0.0.0"
+
+database:
+  host: "localhost"
+  port: 5432
+  name: "consultancy_search"
+  user: "postgres"
+  password: "postgres"
+  max_connections: 20
+
+kafka:
+  brokers: ["localhost:9092"]
+  topic_prefix: "consultancy"
+
+elasticsearch:
+  urls: ["http://localhost:9200"]
+  index_prefix: "consultancy"
+  refresh_interval: "1s"
+  bulk_size: 100
+
+search:
+  max_results: 100
+  default_page_size: 20
+  min_score: 0.5
+  highlight_enabled: true
+
+autocomplete:
+  enabled: true
+  min_characters: 2
+  max_suggestions: 10
+
+logging:
+  level: "info"
+  format: "json"

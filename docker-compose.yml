@@ -1,0 +1,472 @@
+version: '3.8'
+
+services:
+  # ===== DATABASE =====
+  postgres:
+    image: postgres:15-alpine
+    container_name: consultancy-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: consultancy
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ===== EVENT BUS =====
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: consultancy-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    volumes:
+      - zookeeper_data:/var/lib/zookeeper/data
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: consultancy-kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+      - "9093:9093"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9093,PLAINTEXT_HOST://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD", "kafka-topics", "--bootstrap-server", "localhost:9092", "--list"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # ===== REDIS =====
+  redis:
+    image: redis:7-alpine
+    container_name: consultancy-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ===== MONITORING =====
+  prometheus:
+    image: prom/prometheus:v2.48.0
+    container_name: consultancy-prometheus
+    ports:
+      - "9091:9090"
+    volumes:
+      - ./infrastructure/docker/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+
+  grafana:
+    image: grafana/grafana:10.2.0
+    container_name: consultancy-grafana
+    ports:
+      - "3300:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: false
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+
+  # ===== SERVICE CONTAINERS =====
+  # User Service
+  user-service:
+    build:
+      context: ./packages/services/user-service
+      dockerfile: Dockerfile
+    container_name: consultancy-user-service
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_HOST=postgres
+      - DATABASE_PORT=5432
+      - DATABASE_NAME=consultancy
+      - DATABASE_USER=postgres
+      - DATABASE_PASSWORD=postgres
+      - KAFKA_BROKERS=kafka:9093
+      - JWT_SECRET=dev-secret
+      - JWT_EXPIRES_IN=24h
+      - PORT=3001
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+
+  # Consultant Service
+  consultant-service:
+    build:
+      context: ./packages/services/consultant-service
+      dockerfile: Dockerfile
+    container_name: consultancy-consultant-service
+    ports:
+      - "3002:3002"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_HOST=postgres
+      - DATABASE_PORT=5432
+      - DATABASE_NAME=consultancy
+      - DATABASE_USER=postgres
+      - DATABASE_PASSWORD=postgres
+      - KAFKA_BROKERS=kafka:9093
+      - PORT=3002
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+
+  # Booking Service
+  booking-service:
+    build:
+      context: ./packages/services/booking-service
+      dockerfile: Dockerfile
+    container_name: consultancy-booking-service
+    ports:
+      - "3003:3003"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_HOST=postgres
+      - DATABASE_PORT=5432
+      - DATABASE_NAME=consultancy
+      - DATABASE_USER=postgres
+      - DATABASE_PASSWORD=postgres
+      - KAFKA_BROKERS=kafka:9093
+      - PORT=3003
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+
+  # Communication Service (Go - WebRTC)
+  communication-service:
+    build:
+      context: ./packages/services/communication-service
+      dockerfile: Dockerfile
+    container_name: consultancy-communication-service
+    ports:
+      - "3004:3004"
+    environment:
+      - SERVER_PORT=3004
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=consultancy
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - KAFKA_BROKERS=kafka:9093
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+
+  # Billing Service (Go)
+  billing-service:
+    build:
+      context: ./packages/services/billing-service
+      dockerfile: Dockerfile
+    container_name: consultancy-billing-service
+    ports:
+      - "3005:3005"
+    environment:
+      - SERVER_PORT=3005
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=consultancy
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - KAFKA_BROKERS=kafka:9093
+      - STRIPE_API_KEY=${STRIPE_API_KEY:-sk_test_placeholder}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET:-placeholder}
+      - PAYPAL_CLIENT_ID=${PAYPAL_CLIENT_ID:-placeholder}
+      - PAYPAL_CLIENT_SECRET=${PAYPAL_CLIENT_SECRET:-placeholder}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+
+  # Content Service
+  content-service:
+    build:
+      context: ./packages/services/content-service
+      dockerfile: Dockerfile
+    container_name: consultancy-content-service
+    ports:
+      - "3006:3006"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_HOST=postgres
+      - DATABASE_PORT=5432
+      - DATABASE_NAME=consultancy
+      - DATABASE_USER=postgres
+      - DATABASE_PASSWORD=postgres
+      - KAFKA_BROKERS=kafka:9093
+      - PORT=3006
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+
+  # AI Orchestrator Service (Python)
+  ai-orchestrator-service:
+    build:
+      context: ./packages/services/ai-orchestrator-service
+      dockerfile: Dockerfile
+    container_name: consultancy-ai-service
+    ports:
+      - "3007:3007"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/consultancy
+      - KAFKA_BROKERS=kafka:9093
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-placeholder}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-placeholder}
+      - SERVER_PORT=3007
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+
+  # Memory Service (Python)
+  memory-service:
+    build:
+      context: ./packages/services/memory-service
+      dockerfile: Dockerfile
+    container_name: consultancy-memory-service
+    ports:
+      - "3008:3008"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/consultancy
+      - REDIS_URL=redis://redis:6379
+      - KAFKA_BROKERS=kafka:9093
+      - PINECONE_API_KEY=${PINECONE_API_KEY:-placeholder}
+      - SERVER_PORT=3008
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+
+  # Search Service (Go)
+  search-service:
+    build:
+      context: ./packages/services/search-service
+      dockerfile: Dockerfile
+    container_name: consultancy-search-service
+    ports:
+      - "3009:3009"
+    environment:
+      - SERVER_PORT=3009
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=consultancy
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - KAFKA_BROKERS=kafka:9093
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+
+  # Notification Service
+  notification-service:
+    build:
+      context: ./packages/services/notification-service
+      dockerfile: Dockerfile
+    container_name: consultancy-notification-service
+    ports:
+      - "3010:3010"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_HOST=postgres
+      - DATABASE_PORT=5432
+      - DATABASE_NAME=consultancy
+      - DATABASE_USER=postgres
+      - DATABASE_PASSWORD=postgres
+      - KAFKA_BROKERS=kafka:9093
+      - SENDGRID_API_KEY=${SENDGRID_API_KEY:-placeholder}
+      - TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID:-placeholder}
+      - TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN:-placeholder}
+      - PORT=3010
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+
+  # Analytics Service (Python)
+  analytics-service:
+    build:
+      context: ./packages/services/analytics-service
+      dockerfile: Dockerfile
+    container_name: consultancy-analytics-service
+    ports:
+      - "3011:3011"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/consultancy
+      - REDIS_URL=redis://redis:6379
+      - KAFKA_BROKERS=kafka:9093
+      - SERVER_PORT=3011
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+
+  # Compliance Service
+  compliance-service:
+    build:
+      context: ./packages/services/compliance-service
+      dockerfile: Dockerfile
+    container_name: consultancy-compliance-service
+    ports:
+      - "3012:3012"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_HOST=postgres
+      - DATABASE_PORT=5432
+      - DATABASE_NAME=consultancy
+      - DATABASE_USER=postgres
+      - DATABASE_PASSWORD=postgres
+      - KAFKA_BROKERS=kafka:9093
+      - PORT=3012
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+
+  # Integration Service
+  integration-service:
+    build:
+      context: ./packages/services/integration-service
+      dockerfile: Dockerfile
+    container_name: consultancy-integration-service
+    ports:
+      - "3013:3013"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_HOST=postgres
+      - DATABASE_PORT=5432
+      - DATABASE_NAME=consultancy
+      - DATABASE_USER=postgres
+      - DATABASE_PASSWORD=postgres
+      - KAFKA_BROKERS=kafka:9093
+      - WHATSAPP_BUSINESS_TOKEN=${WHATSAPP_BUSINESS_TOKEN:-placeholder}
+      - WHATSAPP_VERIFY_TOKEN=${WHATSAPP_VERIFY_TOKEN:-placeholder}
+      - PORT=3013
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+
+  # Vertical Service
+  vertical-service:
+    build:
+      context: ./packages/services/vertical-service
+      dockerfile: Dockerfile
+    container_name: consultancy-vertical-service
+    ports:
+      - "3014:3014"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_HOST=postgres
+      - DATABASE_PORT=5432
+      - DATABASE_NAME=consultancy
+      - DATABASE_USER=postgres
+      - DATABASE_PASSWORD=postgres
+      - KAFKA_BROKERS=kafka:9093
+      - PORT=3014
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+
+  # WhatsApp Bot
+  whatsapp-bot:
+    build:
+      context: ./packages/services/whatsapp-bot
+      dockerfile: Dockerfile
+    container_name: consultancy-whatsapp-bot
+    ports:
+      - "3015:3015"
+    environment:
+      - NODE_ENV=development
+      - WHATSAPP_BUSINESS_TOKEN=${WHATSAPP_BUSINESS_TOKEN:-placeholder}
+      - WHATSAPP_VERIFY_TOKEN=${WHATSAPP_VERIFY_TOKEN:-consultancy_verify_token}
+      - PORT=3015
+    depends_on:
+      kafka:
+        condition: service_healthy
+
+  # API Gateway
+  api-gateway:
+    image: kong/kong-gateway:3.6
+    container_name: consultancy-api-gateway
+    ports:
+      - "8000:8000"
+      - "8001:8001"
+    environment:
+      KONG_DATABASE: 'off'
+      KONG_DECLARATIVE_CONFIG: /etc/kong/kong.yml
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_ERROR_LOG: /dev/stderr
+    volumes:
+      - ./infrastructure/docker/kong.yml:/etc/kong/kong.yml
+    depends_on:
+      - user-service
+      - consultant-service
+      - booking-service
+
+volumes:
+  postgres_data:
+  zookeeper_data:
+  kafka_data:
+  redis_data:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  default:
+    name: consultancy-network
