@@ -27,7 +27,8 @@
     "k8s:apply": "kubectl apply -f infrastructure/kubernetes/base/",
     "db:migrate": "ts-node scripts/migrate.ts",
     "db:seed": "ts-node scripts/seed.ts",
-    "generate:types": "ts-node scripts/generate-types.ts"
+    "generate:types": "ts-node scripts/generate-types.ts",
+    "test:python": "bash scripts/run-python-tests.sh"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",

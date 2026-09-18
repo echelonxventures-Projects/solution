@@ -27,3 +27,7 @@ dependencies = [
     "tenacity>=8.2.0",
     "structlog>=24.1.0",
 ]
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+asyncio_mode = "auto"
