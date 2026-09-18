@@ -53,6 +53,38 @@
 - `docker-compose.yml` - Local development environment
 - `tests/e2e/playwright.config.ts` - E2E test configuration
 - `tests/api/jest.config.js` - API test configuration
+- `packages/mobile/jest.config.js` + `src/lib/__tests__` + `src/stores/__tests__` - mobile tests
+- `scripts/run-python-tests.sh` - reproducible Python test runner (`npm run test:python`)
+
+## Bugs Found & Fixed During Verification
+
+- `tests/integration/service-interconnection.test.ts` used shell-style `#`
+  comments (invalid TypeScript) and imported a non-existent `neo4j-driver`
+  named export; the suite now compiles and type-checks.
+- compliance-service `consent` route imported `NotFoundError` but raised
+  `ValidationError`; `delete` route used the `insert` helper without
+  importing it.
+- notification-service `notifications` route used the `update` helper
+  without importing it; `templates` needed an index signature to support
+  dynamic template registration.
+- content-service `upload-handler` imported `multer` and `axios` that were
+  never declared as dependencies (`multer` + `@types/multer` added;
+  unused `axios` and S3 constants removed).
+- WhatsApp bot called `app.listen()` at import time, which made the Express
+  app impossible to unit-test; the listen is now guarded by
+  `require.main === module`.
+- Python services used the deprecated class-based pydantic `Config`;
+  migrated to `SettingsConfigDict`.
+
+## Workspace & CI Wiring
+
+- `tests/api`, `tests/e2e`, `tests/integration` are now npm workspaces so
+  their dependencies install and they run via `npm run test:api`,
+  `test:integration` and `test:e2e`. Live-stack suites are excluded from the
+  default `npm test` so unit-test runs stay green without infrastructure.
+- CI now lints/tests `whatsapp-bot` and the mobile app, runs pytest for the
+  Python services (instead of only a syntax check), and provisions MongoDB
+  and Elasticsearch for the integration-test job.
 
 ## Deployment Instructions
 
@@ -73,18 +105,40 @@ npm run db:migrate  # against production DATABASE_* env vars
 ## Testing Commands
 
 ```bash
-# API Tests
-npm test -- tests/api
+# Unit tests (Node/TS services, web, admin, mobile)
+npm test
 
-# E2E Tests
-npm test -- tests/e2e
+# Go services (billing, communication, search)
+cd packages/services/<service> && go test ./...
 
-# Integration Tests
-npm test -- tests/integration
+# Python services (ai-orchestrator, analytics, memory)
+npm run test:python
+
+# Live-stack suites (require a running environment)
+npm run test:api          # API tests
+npm run test:integration  # service interconnection
+npm run test:e2e          # Playwright browser tests
 
 # Security Scan
 npm run security:scan
 ```
+
+## Test Coverage
+
+| Area | Runner | Tests |
+|------|--------|-------|
+| shared (auth, validation, errors) | vitest | 49 |
+| user-service (auth, health) | vitest | 16 |
+| consultant-service | vitest | 6 |
+| booking-service | vitest | 15 |
+| vertical-service | vitest | 11 |
+| compliance / content / integration / notification (health) | vitest | 8 |
+| whatsapp-bot (webhook verification, message handling) | vitest | 7 |
+| mobile (formatters, zustand stores) | jest | 27 |
+| billing (pricing engine, refunds, payouts, config, models) | go test | 38 |
+| communication (WebRTC rooms, ICE servers, config) | go test | 21 |
+| search (parse helpers, model validation) | go test | 15 |
+| ai-orchestrator (20) / analytics (20) / memory (23) - models & settings | pytest | 63 |
 
 ## Platform Features Verified
 

@@ -143,18 +143,27 @@ Then use Expo Go app on your phone or run simulator.
 ## Testing
 
 ```bash
-# Run all tests
+# Run all unit tests (Node/TS services, web, admin, mobile)
 npm test
 
-# Run E2E tests
-cd tests/e2e && npm test
+# Go service tests (billing, communication, search)
+cd packages/services/billing-service && go test ./...
+cd packages/services/communication-service && go test ./...
+cd packages/services/search-service && go test ./...
 
-# Run API tests
-cd tests/api && npm test
+# Python service tests (ai-orchestrator, analytics, memory)
+# Provisions a small virtualenv with the lightweight test dependencies
+npm run test:python
 
-# Run integration tests
-cd tests/integration && npm test
+# Live-stack suites (require a running environment):
+npm run test:api          # API tests against a deployed API gateway
+npm run test:integration  # service + datastore interconnection
+npm run test:e2e          # Playwright browser tests
 ```
+
+All Node/TS services also have per-package `npm test` and `npm run lint`
+scripts; run them from the package directory or via
+`npm test --workspace <package-name>`.
 
 ## Troubleshooting
 
