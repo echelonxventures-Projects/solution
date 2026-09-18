@@ -1,11 +1,10 @@
-# Integration Tests - Service Interconnection
-# These tests verify that services can communicate correctly
+// Integration Tests - Service Interconnection
+// These tests verify that services can communicate correctly
 
 import axios from 'axios'
 import { Kafka, Producer, Consumer } from 'kafkajs'
 import Redis from 'ioredis'
 import { MongoClient } from 'mongodb'
-import { Client as Neo4jClient } from 'neo4j-driver'
 import { Client as ElasticsearchClient } from '@elastic/elasticsearch'
 
 // Configuration

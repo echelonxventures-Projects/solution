@@ -8,7 +8,8 @@
     "packages/services/*",
     "packages/web",
     "packages/mobile",
-    "packages/admin"
+    "packages/admin",
+    "tests/*"
   ],
   "scripts": {
     "build": "turbo run build",
