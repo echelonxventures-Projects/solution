@@ -19,7 +19,7 @@ const DEMO_SETTINGS = {
   },
   ai: {
     defaultTier: 'basic',
-    ollamaEndpoint: 'http://localhost:11434',
+    standardEndpoint: 'http://localhost:11434',
     openaiKey: 'sk-...',
     anthropicKey: 'sk-ant-...',
     maxTokensPerRequest: 4000,
@@ -65,10 +65,10 @@ const MENU_ITEMS = [
 ]
 
 const AI_TIERS = [
-  { id: 'free', name: 'Free (Ollama)', description: 'Local AI, limited capabilities' },
-  { id: 'basic', name: 'Basic (GPT-3.5)', description: 'Cloud AI, standard features' },
-  { id: 'premium', name: 'Premium (Claude Sonnet)', description: 'Advanced reasoning, better context' },
-  { id: 'enterprise', name: 'Enterprise (Claude Opus)', description: 'Full agentic system, knowledge graph' },
+  { id: 'free', name: 'Free (Standard AI)', description: 'Local AI, limited capabilities' },
+  { id: 'basic', name: 'Basic (Enhanced AI)', description: 'Cloud AI, standard features' },
+  { id: 'premium', name: 'Premium (Advanced AI)', description: 'Advanced reasoning, better context' },
+  { id: 'enterprise', name: 'Enterprise (Enterprise-grade AI)', description: 'Full agentic system, knowledge graph' },
 ]
 
 export default function SettingsPage() {
@@ -362,11 +362,11 @@ export default function SettingsPage() {
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
                   <div>
-                    <label style={{ display: 'block', color: '#6b7280', fontSize: '14px', marginBottom: '8px' }}>Ollama Endpoint</label>
+                    <label style={{ display: 'block', color: '#6b7280', fontSize: '14px', marginBottom: '8px' }}>Standard AI Endpoint</label>
                     <input
                       type="text"
-                      value={settings.ai.ollamaEndpoint}
-                      onChange={(e) => setSettings({ ...settings, ai: { ...settings.ai, ollamaEndpoint: e.target.value } })}
+                      value={settings.ai.standardEndpoint}
+                      onChange={(e) => setSettings({ ...settings, ai: { ...settings.ai, standardEndpoint: e.target.value } })}
                       style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #e5e7eb', fontSize: '14px' }}
                     />
                   </div>

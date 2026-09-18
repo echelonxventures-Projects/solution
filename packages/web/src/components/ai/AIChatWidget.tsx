@@ -5,22 +5,22 @@ import { useState, useEffect } from 'react'
 // AI Configuration based on subscription tier
 const AI_CONFIG = {
   free: {
-    model: 'Ollama Llama 3.2',
+    model: 'Standard AI',
     features: ['Basic Chat', 'Simple Matching'],
     responseDelay: 3000,
   },
   basic: {
-    model: 'GPT-3.5 Turbo',
+    model: 'Enhanced AI',
     features: ['Chat', 'Matching', 'Knowledge'],
     responseDelay: 2000,
   },
   premium: {
-    model: 'Claude Sonnet 4.6',
+    model: 'Advanced AI',
     features: ['Chat', 'Matching', 'Knowledge', 'Insights', 'Sentiment'],
     responseDelay: 1500,
   },
   enterprise: {
-    model: 'Claude Opus 4.6',
+    model: 'Enterprise-grade AI',
     features: ['All Features', 'Custom Fine-tuned', 'Real-time Copilot'],
     responseDelay: 1000,
   },

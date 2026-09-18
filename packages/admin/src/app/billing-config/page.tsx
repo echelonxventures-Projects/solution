@@ -35,9 +35,9 @@ const PRICING_UNIT_TYPES = [
 
 // AI Providers (Configurable)
 const AI_PROVIDERS = [
-  { value: 'ollama', label: 'Ollama (Free/Local)', type: 'free', icon: '🦙' },
+  { value: 'standard', label: 'Standard AI (Free/Local)', type: 'free', icon: '🦙' },
   { value: 'openai', label: 'OpenAI (Paid)', type: 'paid', icon: '🤖' },
-  { value: 'anthropic', label: 'Anthropic Claude (Paid)', type: 'paid', icon: '🧠' },
+  { value: 'ai-pro', label: 'AI Pro (Paid)', type: 'paid', icon: '🧠' },
   { value: 'google', label: 'Google Gemini (Paid)', type: 'paid', icon: '✨' },
   { value: 'azure', label: 'Azure OpenAI (Paid)', type: 'paid', icon: '☁️' },
   { value: 'aws', label: 'AWS Bedrock (Paid)', type: 'paid', icon: '📦' },
@@ -472,8 +472,8 @@ function SubscriptionTiersConfig() {
           limits: {},
           aiConfig: {
             enabled: true,
-            provider: 'ollama',
-            modelId: 'llama3.2',
+            provider: 'standard',
+            modelId: 'standard',
             apiEndpoint: 'http://localhost:11434',
             maxTokens: 512,
             requestsPerMinute: 10,
@@ -502,7 +502,7 @@ function SubscriptionTiersConfig() {
             tierLevel: tiers.length,
             tierColor: '#3B82F6',
             pricingOptions: [{ unit: 'month', price: 0 }],
-            aiConfig: { enabled: false, provider: 'ollama', modelId: '', maxTokens: 1024 },
+            aiConfig: { enabled: false, provider: 'standard', modelId: '', maxTokens: 1024 },
             isActive: true,
           })}
           className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
@@ -602,13 +602,13 @@ function SubscriptionTiersConfig() {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Model Name/ID</label>
                     <input
                       {...register(`tiers.${index}.aiConfig.modelId`)}
-                      placeholder="e.g., claude-opus-4-20250514, gpt-4-turbo, llama3.2"
+                      placeholder="e.g., standard"
                       className="w-full px-3 py-2 border rounded-lg"
                     />
                   </div>
 
                   {/* API Endpoint (for custom/local) */}
-                  {watch(`tiers.${index}.aiConfig.provider`) === 'ollama' ||
+                  {watch(`tiers.${index}.aiConfig.provider`) === 'standard' ||
                    watch(`tiers.${index}.aiConfig.provider`) === 'local' ||
                    watch(`tiers.${index}.aiConfig.provider`) === 'custom' ? (
                     <div className="col-span-2">

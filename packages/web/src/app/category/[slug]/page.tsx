@@ -18,10 +18,10 @@ const AI_CATEGORY_CONFIG = {
       translation: true,
     },
     aiModels: {
-      free: 'Ollama Llama 3.2',
-      basic: 'GPT-3.5 Turbo',
-      premium: 'Claude Sonnet 4.6',
-      enterprise: 'Claude Opus 4.6 + Custom Fine-tuned',
+      free: 'AI Starter',
+      basic: 'AI Plus',
+      premium: 'AI Pro',
+      enterprise: 'AI Enterprise',
     },
     knowledgeDomains: ['Strategy', 'Operations', 'Finance', 'Marketing', 'Management', 'Entrepreneurship'],
     aiCapabilities: [
@@ -49,10 +49,10 @@ const AI_CATEGORY_CONFIG = {
       codeAnalysis: true,
     },
     aiModels: {
-      free: 'Ollama CodeLlama',
-      basic: 'GPT-3.5 Turbo',
-      premium: 'Claude Sonnet 4.6',
-      enterprise: 'Claude Opus 4.6 + Code Analysis',
+      free: 'AI Starter',
+      basic: 'AI Plus',
+      premium: 'AI Pro',
+      enterprise: 'Enterprise-grade AI with Code Analysis',
     },
     knowledgeDomains: ['Software Development', 'AI/ML', 'Cloud Architecture', 'Cybersecurity', 'DevOps', 'Data Science'],
     aiCapabilities: [
@@ -80,10 +80,10 @@ const AI_CATEGORY_CONFIG = {
       riskAnalysis: true,
     },
     aiModels: {
-      free: 'Ollama Llama 3.2',
-      basic: 'GPT-3.5 Turbo',
-      premium: 'Claude Sonnet 4.6',
-      enterprise: 'Claude Opus 4.6 + Financial Models',
+      free: 'AI Starter',
+      basic: 'AI Plus',
+      premium: 'AI Pro',
+      enterprise: 'Enterprise-grade AI with Financial Models',
     },
     knowledgeDomains: ['Investment', 'Taxation', 'Accounting', 'Wealth Management', 'Corporate Finance', 'Personal Finance'],
     aiCapabilities: [
@@ -111,10 +111,10 @@ const AI_CATEGORY_CONFIG = {
       wellnessTracking: true,
     },
     aiModels: {
-      free: 'Ollama Llama 3.2',
-      basic: 'GPT-3.5 Turbo',
-      premium: 'Claude Sonnet 4.6',
-      enterprise: 'Claude Opus 4.6 + Medical Knowledge',
+      free: 'AI Starter',
+      basic: 'AI Plus',
+      premium: 'AI Pro',
+      enterprise: 'Enterprise-grade AI with Medical Knowledge',
     },
     knowledgeDomains: ['Nutrition', 'Fitness', 'Mental Health', 'Lifestyle', 'Preventive Care', 'Wellness Coaching'],
     aiCapabilities: [
@@ -142,10 +142,10 @@ const AI_CATEGORY_CONFIG = {
       documentAnalysis: true,
     },
     aiModels: {
-      free: 'Ollama Llama 3.2',
-      basic: 'GPT-3.5 Turbo',
-      premium: 'Claude Sonnet 4.6',
-      enterprise: 'Claude Opus 4.6 + Legal Database',
+      free: 'AI Starter',
+      basic: 'AI Plus',
+      premium: 'AI Pro',
+      enterprise: 'Enterprise-grade AI with Legal Database',
     },
     knowledgeDomains: ['Corporate Law', 'Intellectual Property', 'Contract Law', 'Employment Law', 'Real Estate', 'Family Law'],
     aiCapabilities: [
@@ -173,10 +173,10 @@ const AI_CATEGORY_CONFIG = {
       resumeAnalysis: true,
     },
     aiModels: {
-      free: 'Ollama Llama 3.2',
-      basic: 'GPT-3.5 Turbo',
-      premium: 'Claude Sonnet 4.6',
-      enterprise: 'Claude Opus 4.6 + Career Models',
+      free: 'AI Starter',
+      basic: 'AI Plus',
+      premium: 'AI Pro',
+      enterprise: 'Enterprise-grade AI with Career Models',
     },
     knowledgeDomains: ['Job Search', 'Interview Prep', 'Resume Writing', 'Career Transition', 'Leadership', 'Skill Development'],
     aiCapabilities: [
@@ -204,10 +204,10 @@ const AI_CATEGORY_CONFIG = {
       campaignAnalysis: true,
     },
     aiModels: {
-      free: 'Ollama Llama 3.2',
-      basic: 'GPT-3.5 Turbo',
-      premium: 'Claude Sonnet 4.6',
-      enterprise: 'Claude Opus 4.6 + Marketing AI',
+      free: 'AI Starter',
+      basic: 'AI Plus',
+      premium: 'AI Pro',
+      enterprise: 'Enterprise-grade AI with Marketing AI',
     },
     knowledgeDomains: ['Digital Marketing', 'Brand Strategy', 'Content Marketing', 'SEO/SEM', 'Social Media', 'Analytics'],
     aiCapabilities: [
@@ -235,10 +235,10 @@ const AI_CATEGORY_CONFIG = {
       learningPathAnalysis: true,
     },
     aiModels: {
-      free: 'Ollama Llama 3.2',
-      basic: 'GPT-3.5 Turbo',
-      premium: 'Claude Sonnet 4.6',
-      enterprise: 'Claude Opus 4.6 + Education Models',
+      free: 'AI Starter',
+      basic: 'AI Plus',
+      premium: 'AI Pro',
+      enterprise: 'Enterprise-grade AI with Education Models',
     },
     knowledgeDomains: ['Academic Tutoring', 'Test Preparation', 'Language Learning', 'Professional Development', 'Study Skills', 'Curriculum Design'],
     aiCapabilities: [
@@ -347,6 +347,10 @@ export default function AICategoryPage() {
           </a>
 
           <nav style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: '#dcfce7', color: '#15803d', padding: '6px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '600' }}>
+              <span style={{ width: '8px', height: '8px', backgroundColor: '#22c55e', borderRadius: '50%', display: 'inline-block' }} />
+              🤖 AI Online
+            </span>
             <a href="/search" style={{ color: '#4b5563', textDecoration: 'none', fontWeight: '500' }}>Find Consultants</a>
             <a href="/auth/login" style={{ color: '#4b5563', textDecoration: 'none', fontWeight: '500' }}>Log in</a>
             <a href="/auth/register" style={{ backgroundColor: config.colors.primary, color: 'white', padding: '10px 20px', borderRadius: '8px', textDecoration: 'none', fontWeight: '600' }}>Sign up</a>
@@ -779,7 +783,7 @@ export default function AICategoryPage() {
             <span style={{ fontWeight: 'bold', color: 'white' }}>{config.name} Consultancy</span> - AI-Powered by {config.aiModels[aiTier]}
           </div>
           <div style={{ fontSize: '14px' }}>
-            © 2024 Consultancy Platform. All AI features powered by Claude, GPT, and custom fine-tuned models.
+            © 2024 Consultancy Platform - AI-Powered Consultancy Marketplace.
           </div>
         </div>
       </footer>

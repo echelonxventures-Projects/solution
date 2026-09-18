@@ -263,7 +263,7 @@ export default function HomePage() {
             </div>
           </div>
           <div style={{ borderTop: '1px solid #374151', marginTop: '32px', paddingTop: '32px', textAlign: 'center', fontSize: '14px' }}>
-            © 2024 Consultancy Platform. Powered by Claude, GPT, and custom AI models.
+            © 2024 Consultancy Platform - AI-Powered Consultancy Marketplace.
           </div>
         </div>
       </footer>
