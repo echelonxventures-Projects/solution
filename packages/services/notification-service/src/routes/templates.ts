@@ -1,7 +1,6 @@
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { insert, findOne, findAll, update } from '@consultancy/shared/database';
+import { FastifyInstance } from 'fastify';
 
-const templates = {
+const templates: Record<string, { subject: string; body: string }> = {
   'welcome': { subject: 'Welcome to Consultancy Platform', body: 'Hi {{name}}, welcome to our platform!' },
   'booking-confirmation': { subject: 'Booking Confirmed', body: 'Your booking with {{consultantName}} is confirmed for {{date}}.' },
   'session-reminder': { subject: 'Session Reminder', body: 'Your session starts in {{minutes}} minutes.' },

@@ -1,5 +1,5 @@
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { findOne, findAll, DatabaseClient } from '@consultancy/shared/database';
+import { FastifyInstance } from 'fastify';
+import { findOne, findAll } from '@consultancy/shared/database';
 import { User, Consultant, Booking, Payment, Review } from '@consultancy/shared/types';
 import { NotFoundError } from '@consultancy/shared/utils/errors';
 import { logger } from '@consultancy/shared';
@@ -22,12 +22,6 @@ export default async function exportRoutes(server: FastifyInstance) {
 
       // If user is a consultant, get consultant data
       const consultant = await findOne<Consultant>('consultants', { userId });
-      let consultantBookings = [];
-      let consultantEarnings = [];
-      if (consultant) {
-        consultantBookings = await findAll<Booking>('bookings', { consultantId: consultant.id });
-        // Get payments received
-      }
 
       const exportData = {
         user: {

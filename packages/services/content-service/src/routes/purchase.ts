@@ -1,4 +1,4 @@
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { insert, findOne, update } from '@consultancy/shared/database';
 import { Content, Payment } from '@consultancy/shared/types';

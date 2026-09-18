@@ -1,6 +1,6 @@
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { FastifyInstance } from 'fastify';
 import { insert, findOne } from '@consultancy/shared/database';
-import { logger, publishBookingEvent, publishPaymentEvent } from '@consultancy/shared';
+import { logger, publishPaymentEvent } from '@consultancy/shared';
 
 // Webhook routes - External webhook handlers
 
@@ -12,7 +12,7 @@ export default async function webhooksRoutes(server: FastifyInstance) {
     logger.info('WhatsApp webhook received', { body });
 
     if (body.entry?.[0]?.changes?.[0]?.value?.messages) {
-      const message = body.entry[0].changes[0].value.messages[0];
+      const _message = body.entry[0].changes[0].value.messages[0];
       // Process through AI chatbot
     }
 

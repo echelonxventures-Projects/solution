@@ -1,8 +1,8 @@
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { findOne, update, DatabaseClient } from '@consultancy/shared/database';
+import { findOne, update, insert, DatabaseClient } from '@consultancy/shared/database';
 import { User, UserStatus } from '@consultancy/shared/types';
-import { NotFoundError, ValidationError } from '@consultancy/shared/utils/errors';
+import { NotFoundError } from '@consultancy/shared/utils/errors';
 import { logger } from '@consultancy/shared';
 
 const deleteRequestSchema = z.object({

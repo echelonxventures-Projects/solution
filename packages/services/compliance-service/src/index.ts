@@ -4,7 +4,7 @@ import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import swagger from '@fastify/swagger';
 import swaggerUI from '@fastify/swagger-ui';
-import { logger, DatabaseClient } from '@consultancy/shared';
+import { logger } from '@consultancy/shared';
 import exportRoutes from './routes/export.js';
 import deleteRoutes from './routes/delete.js';
 import consentRoutes from './routes/consent.js';

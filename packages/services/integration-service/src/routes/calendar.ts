@@ -1,6 +1,6 @@
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { findOne, findAll, insert, update } from '@consultancy/shared/database';
+import { findAll, insert, update } from '@consultancy/shared/database';
 import { logger } from '@consultancy/shared';
 
 const syncCalendarSchema = z.object({
@@ -42,7 +42,7 @@ export default async function calendarRoutes(server: FastifyInstance) {
     '/events/:userId',
     async (request, reply) => {
       const { userId } = request.params;
-      const { start, end } = request.query;
+      const { start: _start, end: _end } = request.query;
 
       // Get bookings as calendar events
       const bookings = await findAll('bookings', { seekerId: userId }, { order: 'scheduled_start ASC' });

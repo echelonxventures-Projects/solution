@@ -1,6 +1,6 @@
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { insert, findOne, findAll } from '@consultancy/shared/database';
+import { insert, findOne, findAll, update } from '@consultancy/shared/database';
 import { logger } from '@consultancy/shared';
 
 const sendNotificationSchema = z.object({

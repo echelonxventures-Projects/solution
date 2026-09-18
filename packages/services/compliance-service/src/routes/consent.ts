@@ -1,7 +1,7 @@
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { findOne, update, insert } from '@consultancy/shared/database';
-import { NotFoundError } from '@consultancy/shared/utils/errors';
+import { ValidationError } from '@consultancy/shared/utils/errors';
 
 const updateConsentSchema = z.object({
   marketingEmails: z.boolean(),

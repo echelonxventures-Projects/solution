@@ -1,5 +1,4 @@
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { DatabaseClient } from '@consultancy/shared/database';
+import { FastifyInstance } from 'fastify';
 
 export default async function healthRoutes(server: FastifyInstance) {
   server.get('/health', async (request, reply) => {

@@ -1,6 +1,6 @@
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { findAll, insert, DatabaseClient } from '@consultancy/shared/database';
+import { findAll, insert } from '@consultancy/shared/database';
 
 const auditLogSchema = z.object({
   action: z.string(),

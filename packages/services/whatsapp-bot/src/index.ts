@@ -559,8 +559,12 @@ app.get('/health', (req: Request, res: Response) => {
 })
 
 const PORT = process.env.PORT || 3015
-app.listen(PORT, () => {
-  console.log(`WhatsApp Bot service running on port ${PORT}`)
-})
+
+// Only start the server when run directly, so the app can be imported in tests
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`WhatsApp Bot service running on port ${PORT}`)
+  })
+}
 
 export default app

@@ -1,4 +1,3 @@
-import axios from 'axios'
 import multer from 'multer'
 import { Request, Response } from 'express'
 import crypto from 'crypto'
@@ -6,8 +5,6 @@ import crypto from 'crypto'
 // AWS S3 Configuration (or use other storage like Cloudflare R2)
 const S3_BUCKET = process.env.S3_BUCKET || 'consultancy-content'
 const S3_REGION = process.env.S3_REGION || 'us-east-1'
-const S3_ACCESS_KEY = process.env.S3_ACCESS_KEY
-const S3_SECRET_KEY = process.env.S3_SECRET_KEY
 
 // Storage configuration
 const storage = multer.memoryStorage()
@@ -160,13 +157,13 @@ async function generateThumbnail(buffer: Buffer, contentType: string): Promise<s
 }
 
 // Get Media Duration
-async function getMediaDuration(buffer: Buffer, contentType: string): Promise<number> {
+async function getMediaDuration(_buffer: Buffer, _contentType: string): Promise<number> {
   // In production, use FFprobe or similar
   return 300 // 5 minutes mock
 }
 
 // Start Video Processing
-async function startVideoProcessing(contentId: string, videoUrl: string) {
+async function startVideoProcessing(contentId: string, _videoUrl: string) {
   // Queue job for:
   // - Transcoding to multiple formats
   // - Generating thumbnails at key frames
@@ -179,7 +176,7 @@ async function startVideoProcessing(contentId: string, videoUrl: string) {
 }
 
 // Create Content Record
-async function createContentRecord(data: any): Promise<{ id: string }> {
+async function createContentRecord(_data: any): Promise<{ id: string }> {
   // In production, call content-service API or database
   return { id: crypto.randomUUID() }
 }
@@ -249,13 +246,13 @@ export async function streamContent(req: Request, res: Response) {
 }
 
 // Get Content Info
-async function getContentInfo(contentId: string): Promise<any | null> {
+async function getContentInfo(_contentId: string): Promise<any | null> {
   // In production, call content-service API
   return null
 }
 
 // Check Content Access
-async function checkContentAccess(contentId: string, userId: string): Promise<boolean> {
+async function checkContentAccess(_contentId: string, _userId: string): Promise<boolean> {
   // In production, check purchase records
   return false
 }
@@ -296,7 +293,7 @@ export async function searchContent(req: Request, res: Response) {
   }
 }
 
-async function performContentSearch(params: any): Promise<any[]> {
+async function performContentSearch(_params: any): Promise<any[]> {
   // In production, call search-service API
   return []
 }
@@ -336,11 +333,11 @@ export async function purchaseContent(req: Request, res: Response) {
   }
 }
 
-async function grantContentAccess(contentId: string, userId: string): Promise<void> {
+async function grantContentAccess(_contentId: string, _userId: string): Promise<void> {
   // In production, create access record in database
 }
 
-async function createPaymentIntent(data: any): Promise<{ clientSecret: string }> {
+async function createPaymentIntent(_data: any): Promise<{ clientSecret: string }> {
   // In production, call billing-service API
   return { clientSecret: 'mock_secret' }
 }

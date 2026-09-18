@@ -1,4 +1,4 @@
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { FastifyInstance } from 'fastify';
 import { findOne, update } from '@consultancy/shared/database';
 import { Content } from '@consultancy/shared/types';
 import { NotFoundError } from '@consultancy/shared/utils/errors';
